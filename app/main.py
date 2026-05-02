@@ -1,8 +1,16 @@
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+
+from app.logging_config import setup_logging
+from app.rules import get_rules, validate_order
+from app.schemas import OrderRequest, OrderResponse
+
+setup_logging()
+logger = logging.getLogger("book-order-guard")
 
 app = FastAPI(title="Book Order Guard API")
 
@@ -31,7 +39,46 @@ def home():
 
 @app.get("/health")
 def health_check():
+    logger.info("health check requested")
     return {
         "status": "ok",
         "service": "Book Order Guard API"
+    }
+
+
+@app.post("/orders/validate", response_model=OrderResponse)
+def validate_book_order(order: OrderRequest):
+    logger.info(
+        "order validation requested book_id=%s quantity=%s grade=%s region=%s",
+        order.book_id,
+        order.quantity,
+        order.member_grade,
+        order.region,
+    )
+
+    result = validate_order(order)
+
+    logger.info(
+        "order validation result status=%s final_price=%s reasons=%s",
+        result.status,
+        result.price.final_price,
+        result.reasons,
+    )
+
+    return result
+
+
+@app.get("/rules")
+def rules():
+    return {
+        "rules": get_rules()
+    }
+
+
+@app.get("/logs-test")
+def logs_test():
+    logger.info("logs test endpoint requested")
+    logger.warning("this is a warning log for operation check")
+    return {
+        "message": "log test completed"
     }
