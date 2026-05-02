@@ -2,7 +2,7 @@
 
 Book Order Guard API는 온라인 도서 주문 요청을 룰 기반으로 검증하고, 주문 가능(APPROVED), 주문 불가(REJECTED), 확인 필요(REVIEW) 상태와 가격 계산 결과를 반환하는 FastAPI 기반 웹/API 서비스입니다.
 
-본 프로젝트는 단순한 기능 구현보다 GitHub 기반 개발 이력 관리, pytest 테스트 자동화, GitHub Actions CI, Docker 패키징, Render 배포, 운영 로그 확인, 장애 시나리오 해결 과정을 포함한 DevOps 파이프라인 구축에 초점을 두었습니다.
+이 프로젝트는 도서 주문 검증 기능을 구현하면서 GitHub, pytest, GitHub Actions, Docker, Render를 연결해 하나의 DevOps 파이프라인을 구성하는 것을 목표로 했습니다.
 
 ---
 
@@ -145,7 +145,7 @@ FastAPI에서 정적 HTML 파일을 반환하고, JavaScript `fetch()`를 사용
   "coupon_code": "WELCOME10",
   "region": "NORMAL"
 }
-````
+```
 
 ### 5.2 주문 검증 응답 예시
 
@@ -463,14 +463,3 @@ book-order-guard-api/
 | Container       | Docker           |
 | Deploy          | Render           |
 | Version Control | Git, GitHub      |
-
----
-
-## 17. 참고 자료
-
-* 수업자료
-* FastAPI 공식 문서
-* pytest 공식 문서
-* GitHub Actions 공식 문서
-* Docker 공식 문서
-* Render 공식 문서
