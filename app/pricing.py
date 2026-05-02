@@ -27,7 +27,7 @@ def calculate_price(order: OrderRequest) -> PriceResult:
 
     discounted_price = after_member_discount - coupon_discount
 
-    shipping_fee = 0 if discounted_price > FREE_SHIPPING_THRESHOLD else SHIPPING_FEE
+    shipping_fee = 0 if discounted_price >= FREE_SHIPPING_THRESHOLD else SHIPPING_FEE
     final_price = discounted_price + shipping_fee
 
     return PriceResult(
