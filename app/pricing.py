@@ -3,7 +3,7 @@ from app.schemas import OrderRequest, PriceResult
 MEMBER_DISCOUNT_RATES = {
     "BASIC": 0,
     "SILVER": 5,
-    "GOLD": 10,
+    "GOLD": 5,
     "VIP": 15,
 }
 
