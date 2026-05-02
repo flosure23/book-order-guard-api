@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+    <meta charset="utf-8">
+    <title>Book Order Guard API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 760px;
+            margin: 40px auto;
+            line-height: 1.6;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        .description {
+            color: #555;
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-top: 12px;
+            font-weight: bold;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 16px;
+            cursor: pointer;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 16px;
+            white-space: pre-wrap;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Book Order Guard API</h1>
+    <p class="description">
+        도서 주문 정보를 입력하면 룰 기반으로 주문 가능, 주문 불가, 확인 필요 상태와 가격 계산 결과를 반환합니다.
+    </p>
+
+    <label>도서 ID</label>
+    <input id="book_id" value="B001">
+
+    <label>도서명</label>
+    <input id="title" value="Database Systems">
+
+    <label>단가</label>
+    <input id="unit_price" type="number" value="25000">
+
+    <label>수량</label>
+    <input id="quantity" type="number" value="2">
+
+    <label>재고</label>
+    <input id="stock" type="number" value="5">
+
+    <label>회원 등급</label>
+    <select id="member_grade">
+        <option value="BASIC">BASIC</option>
+        <option value="SILVER">SILVER</option>
+        <option value="GOLD" selected>GOLD</option>
+        <option value="VIP">VIP</option>
+    </select>
+
+    <label>쿠폰 코드</label>
+    <input id="coupon_code" value="WELCOME10" placeholder="WELCOME10 또는 빈칸">
+
+    <label>배송 지역</label>
+    <select id="region">
+        <option value="NORMAL" selected>NORMAL - 일반 배송</option>
+        <option value="REMOTE_ISLAND">REMOTE_ISLAND - 도서산간</option>
+        <option value="MILITARY_PO_BOX">MILITARY_PO_BOX - 군부대/사서함</option>
+        <option value="OVERSEAS">OVERSEAS - 해외 배송</option>
+    </select>
+
+    <button onclick="validateOrder()">주문 검증하기</button>
+
+    <pre id="result">결과가 여기에 표시됩니다.</pre>
+
+    <script>
+        async function validateOrder() {
+            const result = document.getElementById("result");
+
+            const couponCode = document.getElementById("coupon_code").value.trim();
+
+            const payload = {
+                book_id: document.getElementById("book_id").value,
+                title: document.getElementById("title").value,
+                unit_price: Number(document.getElementById("unit_price").value),
+                quantity: Number(document.getElementById("quantity").value),
+                stock: Number(document.getElementById("stock").value),
+                member_grade: document.getElementById("member_grade").value,
+                coupon_code: couponCode === "" ? null : couponCode,
+                region: document.getElementById("region").value
+            };
+
+            try {
+                const response = await fetch("/orders/validate", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                result.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                result.textContent = "요청 처리 중 오류가 발생했습니다.\n" + error;
+            }
+        }
+    </script>
+</body>
+
+</html>
