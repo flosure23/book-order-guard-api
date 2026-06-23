@@ -6,3 +6,11 @@ venv/
 .github/
 .env
 *.pyc
+docs/
+tmp/
+logs/
+mlruns/
+mlartifacts/
+mlflow.db
+ml/data/orders_retrain.csv
+repomix-output*.xml
