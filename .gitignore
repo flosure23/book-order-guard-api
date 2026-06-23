@@ -7,3 +7,11 @@ venv/
 .DS_Store
 .idea/
 .vscode/
+docs/
+tmp/
+logs/
+mlruns/
+mlartifacts/
+mlflow.db
+ml/data/orders_retrain.csv
+repomix-output*.xml
