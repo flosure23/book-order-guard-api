@@ -27,7 +27,7 @@ FEATURE_COLUMNS = [
     "coupon_code",
     "region",
     "is_preorder",
-    "address_risk_level_wrong",
+    "address_risk_level",
 ]
 
 
