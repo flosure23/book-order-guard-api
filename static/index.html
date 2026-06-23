@@ -3,17 +3,23 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Book Order Guard API</title>
+    <title>Book Order Guard ML</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 760px;
+            max-width: 900px;
             margin: 40px auto;
             line-height: 1.6;
         }
 
         h1 {
             margin-bottom: 8px;
+        }
+
+        h2 {
+            margin-top: 28px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 6px;
         }
 
         .description {
@@ -36,7 +42,8 @@
         }
 
         button {
-            margin-top: 20px;
+            margin-top: 18px;
+            margin-right: 8px;
             padding: 10px 16px;
             cursor: pointer;
         }
@@ -47,14 +54,45 @@
             white-space: pre-wrap;
             margin-top: 20px;
         }
+
+        .box {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .criteria {
+            background: #fffbe8;
+            border: 1px solid #e6d27a;
+            padding: 14px;
+            margin-top: 16px;
+        }
+
+        .summary {
+            background: #eef7ff;
+            border: 1px solid #9cc9ef;
+            padding: 14px;
+            margin-top: 16px;
+        }
     </style>
 </head>
 
 <body>
-    <h1>Book Order Guard API</h1>
+    <h1>Book Order Guard ML</h1>
     <p class="description">
-        도서 주문 정보를 입력하면 룰 기반으로 주문 가능, 주문 불가, 확인 필요 상태와 가격 계산 결과를 반환합니다.
+        도서 주문 정보를 입력하면 기존 룰 기반 검증과 ML 기반 검토 위험도 예측 결과를 확인할 수 있습니다.
     </p>
+
+    <div class="criteria">
+        <strong>위험도 등급 기준</strong><br>
+        낮음(LOW): 위험 점수 0.00 이상 0.40 미만<br>
+        중간(MEDIUM): 위험 점수 0.40 이상 0.50 미만<br>
+        높음(HIGH): 위험 점수 0.50 이상<br>
+        ※ 룰 기반 상태가 주문 가능(APPROVED)이고 위험 등급이 높음(HIGH)이면 최종 상태를 검토 필요(REVIEW)로 전환합니다.
+    </div>
+
+    <h2>주문 정보</h2>
 
     <label>도서 ID</label>
     <input id="book_id" value="B001">
@@ -63,19 +101,19 @@
     <input id="title" value="Database Systems">
 
     <label>단가</label>
-    <input id="unit_price" type="number" value="25000">
+    <input id="unit_price" type="number" value="90000">
 
     <label>수량</label>
     <input id="quantity" type="number" value="2">
 
     <label>재고</label>
-    <input id="stock" type="number" value="5">
+    <input id="stock" type="number" value="20">
 
     <label>회원 등급</label>
     <select id="member_grade">
-        <option value="BASIC">BASIC</option>
+        <option value="BASIC" selected>BASIC</option>
         <option value="SILVER">SILVER</option>
-        <option value="GOLD" selected>GOLD</option>
+        <option value="GOLD">GOLD</option>
         <option value="VIP">VIP</option>
     </select>
 
@@ -90,17 +128,55 @@
         <option value="OVERSEAS">OVERSEAS - 해외 배송</option>
     </select>
 
-    <button onclick="validateOrder()">주문 검증하기</button>
+    <h2>ML 검토 위험도 입력 정보</h2>
 
-    <pre id="result">결과가 여기에 표시됩니다.</pre>
+    <label>고객 가입 후 경과일</label>
+    <input id="customer_age_days" type="number" value="6">
+
+    <label>이전 주문 수</label>
+    <input id="previous_order_count" type="number" value="0">
+
+    <label>최근 7일 주문 수</label>
+    <input id="recent_order_count_7d" type="number" value="4">
+
+    <label>최근 30일 쿠폰 사용 수</label>
+    <input id="coupon_usage_count_30d" type="number" value="5">
+
+    <label>예약판매 여부</label>
+    <select id="is_preorder">
+        <option value="false" selected>아니오</option>
+        <option value="true">예</option>
+    </select>
+
+    <label>배송지 위험도</label>
+    <select id="address_risk_level">
+        <option value="LOW">낮음(LOW)</option>
+        <option value="MEDIUM">중간(MEDIUM)</option>
+        <option value="HIGH" selected>높음(HIGH)</option>
+    </select>
+
+    <button onclick="validateOrder()">주문 검증하기</button>
+    <button onclick="validateOrderWithMl()">ML 포함 검증하기</button>
+
+    <div id="summary" class="summary">결과 요약이 여기에 표시됩니다.</div>
+
+    <h2>상세 결과</h2>
+    <pre id="result">상세 JSON 결과가 여기에 표시됩니다.</pre>
+
+    <h2>운영자 피드백</h2>
+    <p>ML 포함 검증을 먼저 실행한 뒤, 실제 검토 필요 여부를 선택합니다.</p>
+    <button onclick="sendFeedback('REVIEW')">실제 검토 필요(REVIEW)</button>
+    <button onclick="sendFeedback('APPROVED')">실제 검토 불필요(APPROVED)</button>
+    <pre id="feedbackResult">피드백 결과가 여기에 표시됩니다.</pre>
 
     <script>
-        async function validateOrder() {
-            const result = document.getElementById("result");
+        let lastMlResult = null;
+        let lastPayload = null;
 
+        function getBasePayload() {
             const couponCode = document.getElementById("coupon_code").value.trim();
 
-            const payload = {
+            return {
                 book_id: document.getElementById("book_id").value,
                 title: document.getElementById("title").value,
                 unit_price: Number(document.getElementById("unit_price").value),
@@ -110,6 +186,49 @@
                 coupon_code: couponCode === "" ? null : couponCode,
                 region: document.getElementById("region").value
             };
+        }
+
+        function getMlPayload() {
+            return {
+                ...getBasePayload(),
+                customer_age_days: Number(document.getElementById("customer_age_days").value),
+                previous_order_count: Number(document.getElementById("previous_order_count").value),
+                recent_order_count_7d: Number(document.getElementById("recent_order_count_7d").value),
+                coupon_usage_count_30d: Number(document.getElementById("coupon_usage_count_30d").value),
+                is_preorder: document.getElementById("is_preorder").value === "true",
+                address_risk_level: document.getElementById("address_risk_level").value
+            };
+        }
+
+        function renderRuleResult(data) {
+            document.getElementById("summary").innerText =
+                "룰 기반 상태: " + data.status + "\n" +
+                "최종 결제 금액: " + data.price.final_price + "원\n" +
+                "사유: " + (data.reasons.length === 0 ? "없음" : data.reasons.join(", "));
+
+            document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+        }
+
+        function renderMlResult(data) {
+            const reasons = data.risk_reasons.length === 0 ? "없음" : data.risk_reasons.join("\n- ");
+
+            document.getElementById("summary").innerText =
+                "룰 기반 상태: " + data.rule_status + "\n" +
+                "위험 점수(review risk score): " + data.review_risk_score + "\n" +
+                "위험 등급: " + data.review_risk_level + "\n" +
+                "ML 추천: " + data.ml_recommendation + "\n" +
+                "최종 상태: " + data.final_status + "\n\n" +
+                "위험 판단 근거:\n- " + reasons + "\n\n" +
+                "모델: " + data.model_info.model_name + "\n" +
+                "모델 URI: " + data.model_info.model_uri + "\n" +
+                "모델 유형: " + data.model_info.model_type + "\n" +
+                "f1-score: " + data.model_info.f1_score;
+
+            document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function validateOrder() {
+            const payload = getBasePayload();
 
             try {
                 const response = await fetch("/orders/validate", {
@@ -121,9 +240,71 @@
                 });
 
                 const data = await response.json();
-                result.textContent = JSON.stringify(data, null, 2);
+                renderRuleResult(data);
             } catch (error) {
-                result.textContent = "요청 처리 중 오류가 발생했습니다.\n" + error;
+                document.getElementById("result").textContent = "요청 처리 중 오류가 발생했습니다.\n" + error;
+            }
+        }
+
+        async function validateOrderWithMl() {
+            const payload = getMlPayload();
+
+            try {
+                const response = await fetch("/orders/validate-with-ml", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                lastMlResult = data;
+                lastPayload = payload;
+
+                renderMlResult(data);
+            } catch (error) {
+                document.getElementById("result").textContent = "ML 포함 검증 중 오류가 발생했습니다.\n" + error;
+            }
+        }
+
+        async function sendFeedback(correctLabel) {
+            if (!lastMlResult || !lastPayload) {
+                document.getElementById("feedbackResult").innerText = "먼저 ML 포함 검증을 실행하세요.";
+                return;
+            }
+
+            if (lastMlResult.rule_status === "REJECTED") {
+                document.getElementById("feedbackResult").innerText =
+                    "주문 거절 건은 REVIEW 예측 재학습 피드백에서 제외합니다.";
+                return;
+            }
+
+            const feedbackPayload = {
+                order_id: lastPayload.book_id + "-" + new Date().getTime(),
+                order: lastPayload,
+                prediction: lastMlResult.ml_recommendation,
+                correct_label: correctLabel,
+                score: lastMlResult.review_risk_score,
+                serving_model: lastMlResult.model_info.model_uri || lastMlResult.model_info.model_name
+            };
+
+            try {
+                const response = await fetch("/feedback", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(feedbackPayload)
+                });
+
+                const data = await response.json();
+                document.getElementById("feedbackResult").innerText =
+                    "피드백 저장 완료: " + correctLabel + "\n" +
+                    JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById("feedbackResult").innerText = "피드백 저장 중 오류가 발생했습니다.\n" + error;
             }
         }
     </script>
